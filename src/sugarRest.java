@@ -1,5 +1,8 @@
 
+import java.util.ArrayList;
 import java.util.HashMap;
+
+import sugarcrm.ModuleSearchResults;
 import sugarcrm.SugarCRMRest;
 
 public class sugarRest {
@@ -8,7 +11,7 @@ public class sugarRest {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		HashMap<String, Object> data = new HashMap<String, Object>();
+		
 		String path = "http://localhost/sugar";
 		String pass = "admin";
 		
@@ -25,7 +28,23 @@ public class sugarRest {
 			crm.getEntriesCount(modules[i], "", true);
 		}
 		*/
-		crm.searchByModule("", modules, 0, 200);
+		ModuleSearchResults modres = crm.searchByModule("foobar", modules, 0, 200);
+		String[] keys = modres.keySet().toArray(new String[0]);
+		for (int i = 0; i <= keys.length -1; i++) {
+			System.out.printf("[DATA]: %s\n", keys[i]);
+			ArrayList<HashMap<String, String>> rows = modres.get(keys[i]);
+			
+			for (int rowIndex = 0; rowIndex <= rows.size() -1; rowIndex++) {
+				System.out.printf("[ROW %d]\n", rowIndex);
+				HashMap<String, String> data = rows.get(rowIndex);
+				String[] dkeys = data.keySet().toArray(new String[0]);
+				for (int x = 0; x <= dkeys.length -1; x++) {
+					System.out.printf("--)%s => %s\n", dkeys[x], data.get(dkeys[x]));
+				}
+			}
+			
+		}
+		
 		
 	}
 }

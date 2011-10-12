@@ -22,7 +22,12 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.google.gson.Gson;
 
@@ -295,8 +300,10 @@ public class SugarCRMRest {
     Method [  public method search_by_module ] {	
 	*/
 	
-	public void searchByModule(String search, String[] modules, int offset, int maxResults) {
+	public ModuleSearchResults searchByModule(String search, String[] modules, int offset, int maxResults) {
 		String modstr = "";
+		//HashMap<String, ArrayList<HashMap<String, String>>> result = new HashMap<String, ArrayList<HashMap<String,String>>>();
+		ModuleSearchResults result = new ModuleSearchResults();
 		
 		for (int i = 0; i <= modules.length -1; i++) {
 			modstr += String.format("\"%s\",", modules[i]);
@@ -326,17 +333,44 @@ public class SugarCRMRest {
 			}
 			print("SearchByModule Response: "+ tmp);
 			
-			if (!tmp.contains("result_count")) {
+			if (!tmp.contains("entry_list")) {
 				Gson json = new Gson();
 				this.setLastError(json.fromJson(tmp, ErrorData.class));
+				result = null;
 			} else {
-				Gson json = new Gson();
-				ResultCount data = json.fromJson(tmp, ResultCount.class);
+				JSONObject obj = new JSONObject(tmp);
+				JSONArray list = obj.getJSONArray("entry_list");
+				
+				for (int i = 0; i <= list.length() -1; i++) {
+					JSONObject modinfo = list.getJSONObject(i);
+					String name = modinfo.getString("name");
+					JSONArray records = modinfo.getJSONArray("records");
+					System.out.printf("NAME: %s\n", name);
+					ArrayList<HashMap<String, String>> recordList = new ArrayList<HashMap<String,String>>();
+					
+					for (int recIndex = 0; recIndex <= records.length() -1; recIndex++) {
+						JSONObject currRec = records.getJSONObject(recIndex);
+						Iterator<String> currIt = currRec.keys();
+						HashMap<String, String> recordData = new HashMap<String, String>();
+						
+						while (currIt.hasNext()) {
+							String key = currIt.next();
+							JSONObject recInfo = currRec.getJSONObject(key);
+							String v = recInfo.getString("value");
+							System.out.printf("Key: %s => %s\n", key, v);
+							recordData.put(key,v);
+						}
+						recordList.add(recordData);
+						result.put(name, recordList);
+					}
+				}
 			}
 			
 		} catch (Exception exp) {
 			exp.printStackTrace();
 		}
+		
+		return result;
 	}
 	
 	
