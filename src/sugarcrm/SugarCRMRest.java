@@ -288,21 +288,8 @@ public class SugarCRMRest {
 		return result;
 	}
 	
-	/*
-	 * @param string $session			- Session ID returned by a previous call to login.
- * @param string $search_string 	- string to search
- * @param string[] $modules			- array of modules to query
- * @param int $offset				- a specified offset in the query
- * @param int $max_results			- max number of records to return
- * @return Array return_search_result 	- Array('Accounts' => array(array('name' => 'first_name', 'value' => 'John', 'name' => 'last_name', 'value' => 'Do')))
- * @exception 'SoapFault' -- The SOAP error, if any
-
-    Method [  public method search_by_module ] {	
-	*/
-	
 	public ModuleSearchResults searchByModule(String search, String[] modules, int offset, int maxResults) {
 		String modstr = "";
-		//HashMap<String, ArrayList<HashMap<String, String>>> result = new HashMap<String, ArrayList<HashMap<String,String>>>();
 		ModuleSearchResults result = new ModuleSearchResults();
 		
 		for (int i = 0; i <= modules.length -1; i++) {
@@ -345,7 +332,7 @@ public class SugarCRMRest {
 					JSONObject modinfo = list.getJSONObject(i);
 					String name = modinfo.getString("name");
 					JSONArray records = modinfo.getJSONArray("records");
-					System.out.printf("NAME: %s\n", name);
+					print(String.format("NAME: %s", name));
 					ArrayList<HashMap<String, String>> recordList = new ArrayList<HashMap<String,String>>();
 					
 					for (int recIndex = 0; recIndex <= records.length() -1; recIndex++) {
@@ -357,7 +344,7 @@ public class SugarCRMRest {
 							String key = currIt.next();
 							JSONObject recInfo = currRec.getJSONObject(key);
 							String v = recInfo.getString("value");
-							System.out.printf("Key: %s => %s\n", key, v);
+							print(String.format("Key: %s => %s", key, v));
 							recordData.put(key,v);
 						}
 						recordList.add(recordData);
@@ -373,6 +360,76 @@ public class SugarCRMRest {
 		return result;
 	}
 	
+	/*
+	 * Retrieve vardef information on the fields of the specified bean.
+ *
+ * @param String $session -- Session ID returned by a previous call to login.
+ * @param String $module_name -- The name of the module to return records from.  This name should be the name the module was developed under (changing a tab name is studio does not affect the name that should be passed into this method)..
+ * @param Array $fields -- Optional, if passed then retrieve vardef information on these fields only.
+ * @return Array    'module_fields' -- Array - The vardef information on the selected fields.
+ *                  'link_fields' -- Array - The vardef information on the link fields
+ * @exception 'SoapFault' -- The SOAP error, if any
+    
+    Method [  public method get_module_fields ] {
+	*/
+	public void getModuleFields(String moduleName, String[] fieldsList) {
+		String restPath = String.format("%s?method=get_module_fields&input_type=json&response_type=json&rest_data=", 
+				this.baseURL);
+		String strdata = "";
+		String[] keys = {"module_name", "link_fields", "module_fields"};
+		HashMap<String, HashMap<String, String>> result = new HashMap<String, HashMap<String,String>>();
+		
+		strdata = String.format("{\"session\":\"%s\",\"module_name\":\"%s\"",
+				this.sessionID, moduleName);
+		
+		if (fieldsList != null && fieldsList.length > 0) {
+			String fieldstr = ",\"fields\":[";
+			
+			for (int i = 0; i <= fieldsList.length -1; i++) {
+				String tmp = "";
+				tmp = String.format("\"%s\",", fieldsList[i]);
+				fieldstr += tmp;
+			}
+			fieldstr = fieldstr.substring(0, fieldstr.length() -1);
+			fieldstr += "]";
+			strdata += fieldstr;
+		}
+		strdata += "}";
+		restPath += strdata;
+		
+		try {
+			print("URL: "+restPath);
+			URL url = new URL(restPath);
+			HttpURLConnection http = (HttpURLConnection)url.openConnection();
+			http.setRequestMethod("GET");
+			http.setUseCaches(false);
+			http.setDoInput(true);
+			http.setDoOutput(true);
+			InputStream in = http.getInputStream();
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			String line = "";
+			String tmp = "";
+
+			while ((line = br.readLine()) != null) {
+				tmp += line;
+			}
+			
+			print("GetModuleFields Response: "+ tmp);
+			
+			if (tmp.contains("module_name")) {
+				JSONObject obj = new JSONObject(tmp);
+				//String[] keys = {"module_name", "link_fields", "module_fields"};
+				
+				
+			} else {
+				
+			}
+			
+		} catch (Exception exp) {
+			exp.printStackTrace();
+		}
+		
+	}
 	
 	private String genPasswordMD5(String password) {
 		String result = "";
